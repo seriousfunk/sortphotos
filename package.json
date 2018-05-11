@@ -1,0 +1,19 @@
+{
+  "name": "sortphotos",
+  "version": "1.0.0",
+  "description": "Move photos from a directory recursively into an organized directory structure by the photos exif date created.",
+  "main": "sortphotos.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "sort",
+    "photos",
+    "organize"
+  ],
+  "author": "Matt Muro",
+  "license": "ISC",
+  "dependencies": {
+    "exif": "^0.6.0"
+  }
+}
