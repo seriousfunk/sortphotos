@@ -12,6 +12,10 @@ if (process.argv.length <= 2) {
 var dirPath = process.argv[2];
  
 fs.readdir(dirPath, function(err, items) {
+	if (err) {
+		return console.error(err);
+		process.exit(1);
+	 }
     for (let i=0; i<items.length; i++) {
         let file = dirPath + '/' + items[i];
         console.log("Start: " + file);
@@ -28,8 +32,8 @@ fs.readdir(dirPath, function(err, items) {
 				    	}
 				        else {
 
-				        	console.log(os.EOL + "\x1b[1m \x1b[33m ------------------------------- \x1b[0m")
-				        	console.log("\x1b[1m \x1b[33m " + file + "   \x1b[0m" + os.EOL)
+				        	console.log(os.EOL + "\x1b[1m\x1b[33m------------------------------- \x1b[0m")
+				        	console.log("\x1b[1m\x1b[33m" + file + "   \x1b[0m" + os.EOL)
 				            console.log(exifData.exif.CreateDate); // Do something with your data!
 				            // split create date on colons or spaces
 				            let cd = exifData.exif.CreateDate.split(/[:| ]/,3)
@@ -46,6 +50,18 @@ fs.readdir(dirPath, function(err, items) {
 
 	            console.log(file);
 	            console.log(stats["size"]);
+			}
+			else {
+				// if not a file with exif data just move the file based on file date
+				console.log(`${file} is not a .jpg`)
+				console.log('CTIME: ' + stats.mtime)
+				let fileDate = new Date(stats.mtime);
+				let fileYear = fileDate.getFullYear();
+				let fileMonth = fileDate.getMonth()+1;
+				let fileDay = fileDate.getDate();
+				console.log(`Year: ${fileYear}`)
+				console.log(`Month: ${fileMonth}`)
+				console.log(`Day: ${fileDay}`)
 			}    
 
 	     });
