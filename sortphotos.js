@@ -1,16 +1,39 @@
-const fs 		= require('fs');
-const path 		= require('path');
-const os 		= require("os");
-const ExifImage = require('exif').ExifImage;
+'use strict'
 
-if (process.argv.length <= 2) {
+const fs 		= require('fs')
+const path 		= require('path')
+const os 		= require("os")
+const program   = require('commander')
+const chalk     = require('chalk')
+const ExifImage = require('exif').ExifImage
 
-    console.log(os.EOL + "\x1b[1m \x1b[31m Usage: \x1b[0m node " + path.basename(__filename, '.js') + " path/to/directory" + os.EOL);
-    process.exit(1);
+program
+  .version('1.0.0')
+  .description('Move photos from a directory into an organized directory structure by the photos exif date created (if available) or file create date.')
+  .option('-s, --source', 'Source Directory')
+  .option('-d, --destination', 'Destination Directory')
+  .option('-r, --recursive', 'recurse subdirectories')
+  .option('-f --folder <format>', 'Folder Format', /^(YYYY_MM|YYYY_MM_DD|YYYY\/MM)$/i, 'YYYY_MM')
+  .on('--help', function() {
+	console.log()
+    console.log("  " + chalk.yellow("Examples:"));
+    console.log()
+    console.log("   $ node " + path.basename(process.argv[1], '.js') + " -s c:\\camera uploads -d c:\\My Photos -f YYYY_MM")
+    console.log()
+  });  
+program.parse(process.argv);
+
+if (undefined == program.source || undefined == program.destination) {
+	console.log()
+	console.log("Error: " + chalk.red("source and destination folder required."))
+	program.help()
 }
 
-var dirPath = process.argv[2];
- 
+// create the directory if it doesn't exist
+function setDirectory (year, month) {
+
+}
+
 fs.readdir(dirPath, function(err, items) {
 	if (err) {
 		return console.error(err);
@@ -31,7 +54,6 @@ fs.readdir(dirPath, function(err, items) {
 				    		process.exit(1);
 				    	}
 				        else {
-
 				        	console.log(os.EOL + "\x1b[1m\x1b[33m------------------------------- \x1b[0m")
 				        	console.log("\x1b[1m\x1b[33m" + file + "   \x1b[0m" + os.EOL)
 				            console.log(exifData.exif.CreateDate); // Do something with your data!
@@ -54,7 +76,7 @@ fs.readdir(dirPath, function(err, items) {
 			else {
 				// if not a file with exif data just move the file based on file date
 				console.log(`${file} is not a .jpg`)
-				console.log('CTIME: ' + stats.mtime)
+				console.log('MTIME: ' + stats.mtime)
 				let fileDate = new Date(stats.mtime);
 				let fileYear = fileDate.getFullYear();
 				let fileMonth = fileDate.getMonth()+1;
