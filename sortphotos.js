@@ -13,7 +13,7 @@ program
   .option('-s, --source', 'Source Directory')
   .option('-d, --destination', 'Destination Directory')
   .option('-r, --recursive', 'recurse subdirectories')
-  .option('-f --folder <format>', 'Folder Format', /^(YYYY_MM|YYYY_MM_DD|YYYY\/MM)$/i, 'YYYY_MM')
+  .option('-f --folder <format>', 'Folder Format', /^(YYYY_MM|YYYY_MM_DD|YYYY\/MM|YYYY\/MM-Month)$/i, 'YYYY\/MM-Month')
   .on('--help', function() {
 	console.log()
     console.log("  " + chalk.yellow("Examples:"));
