@@ -16,7 +16,7 @@ program
   .option('-f --folder <format>', 'Folder Format', /^(YYYY_MM|YYYY_MM_DD|YYYY\/MM|YYYY\/MM-Month)$/i, 'YYYY\/MM-Month')
   .on('--help', function() {
 	console.log()
-    console.log("  " + chalk.yellow("Examples:"));
+    console.log("  " + chalk.bgYellow(" Examples: "));
     console.log()
     console.log("   $ node " + path.basename(process.argv[1], '.js') + " -s c:\\camera uploads -d c:\\My Photos -f YYYY\/YYYY_MM")
     console.log()
@@ -26,7 +26,7 @@ program.parse(process.argv);
 
 if (undefined == program.source || undefined == program.destination) {
 	console.log()
-	console.log("Error: " + chalk.red("source and destination folder required."))
+	console.log(chalk` {bgRed  Error: } {red source and destination folder required.}`)
 	program.help()
 }
 
