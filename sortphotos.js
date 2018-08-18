@@ -30,22 +30,26 @@ if (undefined == program.source || undefined == program.destination) {
 	program.help()
 }
 
-console.log("program.source = " + program.source)
-return
+
+// console.log("program.source = " + program.source)
+// return
 
 // create the directory if it doesn't exist
 function setDirectory (year, month) {
 
 }
 
-fs.readdir(dirPath, function(err, items) {
+// TODO: msg about creating or writing to log file in log directory
+console.log(`${os.EOL}Logging sortphotos activity. Run ${new Date}.`)
+
+fs.readdir(program.source, function(err, items) {
 	if (err) {
 		return console.error(err);
 		process.exit(1);
 	 }
     for (let i=0; i<items.length; i++) {
-        let file = dirPath + '/' + items[i];
-        console.log("Start: " + file);
+        let file = program.source + '/' + items[i];
+		// console.log("Start: " + file);
  
         fs.stat(file, function(err, stats) {
 
@@ -54,16 +58,15 @@ fs.readdir(dirPath, function(err, items) {
 				try {
 				    new ExifImage({ image : file }, function (error, exifData) {
 				        if (error) {
-				            console.log('ExifImage Error: ' + file + " " + error.message);
-				    		process.exit(1);
+				            console.log(chalk` {bgRed  ExifImage Error:} ${file} ${error.message}`)
+				    		process.exit(1)
 				    	}
 				        else {
-				        	console.log(os.EOL + "\x1b[1m\x1b[33m------------------------------- \x1b[0m")
-				        	console.log("\x1b[1m\x1b[33m" + file + "   \x1b[0m" + os.EOL)
+				        	console.log(chalk`${os.EOL}{bgBlue  ${file} } `)
 				            console.log(exifData.exif.CreateDate); // Do something with your data!
 				            // split create date on colons or spaces
 				            let cd = exifData.exif.CreateDate.split(/[:| ]/,3)
-				            console.log(cd)
+				            // console.log(cd)
 				            console.log(`Year: ${cd[0]}`)
 				            console.log(`Month: ${cd[1]}`)
 							console.log(`Day: ${cd[2]}`)
@@ -74,13 +77,13 @@ fs.readdir(dirPath, function(err, items) {
 				    process.exit(2);
 				}
 
-	            console.log(file);
-	            console.log(stats["size"]);
+	            // console.log(file);
+	            // console.log(stats["size"]);
 			}
 			else {
 				// if not a file with exif data just move the file based on file date
-				console.log(`${file} is not a .jpg`)
-				console.log('MTIME: ' + stats.mtime)
+				console.log(chalk`${os.EOL}{bgMagenta  ${file} } {magenta is not a .jpg }`)
+				// console.log('MTIME: ' + stats.mtime)
 				let fileDate = new Date(stats.mtime);
 				let fileYear = fileDate.getFullYear();
 				let fileMonth = fileDate.getMonth()+1;
