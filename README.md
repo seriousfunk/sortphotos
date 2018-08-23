@@ -1,6 +1,6 @@
 Sortphotos
 ======================
-NodeJS script for organizing my photos into a Date (e.g. YYYY/MM-Month) folder structure.
+NodeJS script for organizing photos into a Date folder structure (e.g. YYYY/MM-Month, YYYY_MM)
 
 Options
 ----------------------
