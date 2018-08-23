@@ -13,33 +13,66 @@ program
   .option('-s, --source <source>', 'Source Directory (use quotes if directory contains spaces)')
   .option('-d, --destination <destination>', 'Destination Directory (use quotes if directory contains spaces)')
   .option('-r, --recursive', 'recurse subdirectories')
-  .option('-f --folder <format>', 'Folder Format', /^(YYYY_MM|YYYY_MM_DD|YYYY\/MM|YYYY\/MM-Month)$/i, 'YYYY\/MM-Month')
+  .option('-f --folder <format>', 'Folder Format', /^(YYYY_MM|YYYY_MM_DD|YYYY\/MM||YYYY\/MM-MON|YYYY\/MM-Month)$/i, 'YYYY\/MM-Month')
   .option('-x, --dry-run', 'Write to screen and log what would happen but do not do anything.')
   .on('--help', function() {
 	console.log()
-    console.log("  " + chalk.bgYellow(" Examples: "));
-    console.log()
-    console.log(`   $ node ${path.basename(process.argv[1], '.js')} -s "c:\\camera uploads" -d "c:\\My Photos" -f YYYY\/YYYY_MM`)
-    console.log()
+	console.log("  " + chalk.bgYellow(" Examples: "));
+	console.log()
+	console.log(`   $ node ${path.basename(process.argv[1], '.js')} -s "c:\\camera uploads" -d "c:\\My Photos" -f YYYY\/YYYY_MM`)
+	console.log()
   });
   
 program.parse(process.argv);
 
-// if (undefined == program.source || undefined == program.destination) {
 if (!program.source || !program.destination) {	
 	console.log(chalk`${os.EOL}{bgRed  Error: } {red source and destination folder required.}`)
 	program.help()
 }
 
 if (program.dryRun) {
-	console.log(chalk`${os.EOL}{bgRed  Dry Run: } {red Not sorting, moving photos. Simply displaying and logging what we would do if this was not a dry-run.}`)
+  console.log(chalk`${os.EOL}{bgRed  Dry Run: } {red Not sorting and moving photos. Simply displaying and logging what we would do if this was not a dry-run.}`)
+  console.log(chalk`${os.EOL}{bold Destination folder:}  ${path.join(program.destination, program.folder)}`)
 }
 
 // console.log("program.source = " + program.source)
 // return
 
 // create the directory if it doesn't exist
-function setDirectory (year, month) {
+async function setDirectory(fileDate) {
+  let dateFolder = null
+  const monthsLong = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const monthsShort = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+  // Compose directory based on folder set or default
+  switch (program.folder) {
+    case 'YYYY_MM':
+      dateFolder = `${fileDate[0]}_${fileDate[1].padStart(2, '0')}`
+      break
+    case 'YYYY_MM_DD':
+      dateFolder = `${fileDate[0]}_${fileDate[1].padStart(2, '0')}_${fileDate[2].padStart(2, '0')}`
+      break
+    case 'YYYY/MM':
+      dateFolder = path.join(fileDate[0],fileDate[1].padStart(2, '0'))
+      break
+    case 'YYYY/MM-MON':
+    dateFolder = `${path.join(fileDate[0],fileDate[1].padStart(2, '0'))}-${monthsShort[fileDate[1]]}`
+      break      
+    case 'YYYY/MM-Month':
+      dateFolder = `${path.join(fileDate[0],fileDate[1].padStart(2, '0'))}-${monthsLong[fileDate[1]]}`
+    default:
+      dateFolder = `${path.join(fileDate[0],fileDate[1].padStart(2, '0'))}-${monthsLong[fileDate[1]]}`
+  }
+  
+  // Check if directory exists
+  // fs.stat(filePath)
+
+  console.log(`folder = ${path.join(program.destination, dateFolder)}`)
+
+}
+
+
+function moveFile() {
 
 }
 
@@ -51,60 +84,66 @@ fs.readdir(program.source, function(err, items) {
 		return console.error(err);
 		process.exit(1);
 	 }
-    for (let i=0; i<items.length; i++) {
-        let file = program.source + '/' + items[i];
-		// console.log("Start: " + file);
+	for (let i=0; i<items.length; i++) {
+		let file = program.source + '/' + items[i];
  
-        fs.stat(file, function(err, stats) {
+		fs.stat(file, function(err, stats) {
 
 			if ('.jpg' == path.extname(file)) {
 
 				try {
-				    new ExifImage({ image : file }, function (error, exifData) {
-				        if (error) {
-				            console.log(chalk`{bgRed  ExifImage Error:} ${file} ${error.message}`)
-				    		process.exit(1)
-				    	}
-				        else {
-				            let cd = exifData.exif.CreateDate.split(/[:| ]/,3)
+					new ExifImage({ image : file }, function (error, exifData) {
+						if (error) {
+							console.log(chalk`{bgRed  ExifImage Error:} ${file} ${error.message}`)
+							process.exit(1)
+						}
+						else {
+              let fileDate = exifData.exif.CreateDate.split(/[:| ]/,3)
+              // subtract 1 from month to match Month array that starts at 0 for January
+              fileDate[1] = fileDate[1]-1
+              fileDate[1] = fileDate[1].toString()
 							if (program.dryRun) {
-								console.log(chalk`${os.EOL}{bgBlue  ${file} } `)
-								console.log(exifData.exif.CreateDate);
-								console.log(`Year: ${cd[0]}`)
-								console.log(`Month: ${cd[1]}`)
-								console.log(`Day: ${cd[2]}`)
+								console.log(chalk`${os.EOL}{bgBlue  ${file} } {blue will be moved according to Exif date when the photo was taken.}`)
+								console.log(`Year: ${fileDate[0]}`)
+								console.log(`Month: ${fileDate[1]}`)
+								console.log(`Day: ${fileDate[2]}`)
 							}
 							// check for directory and move file
-				        }
-				    });
+							setDirectory(fileDate)
+								.then(moveFile(file))
+								.catch(console.error)
+						}
+					});
 				} catch (error) {
-				    console.log(chalk`{bgRed  Error: } ${error.message}`);
-				    process.exit(2);
+					console.log(chalk`{bgRed  Error: } ${error.message}`)
+					process.exit(2)
 				}
 
-	            // console.log(file);
-	            // console.log(stats["size"]);
+				// console.log(file);
+				// console.log(stats["size"]);
 			}
 			else {
-				// MTIME
-				let fileDate = new Date(stats.mtime);
-				let fileYear = fileDate.getFullYear();
-				let fileMonth = fileDate.getMonth()+1;
-				let fileDay = fileDate.getDate();
+        // MTIME
+				let fileMtime= new Date(stats.mtime)
+				let fileDate = []
+				fileDate[0] = fileMtime.getFullYear().toString()
+				fileDate[1] = fileMtime.getMonth().toString()
+				fileDate[2] = fileMtime.getDate().toString()
 				if (program.dryRun) {
-					console.log(chalk`${os.EOL}{bgMagenta  ${file} } {magenta is not a .jpg }`)
-					console.log(`Year: ${fileYear}`)
-					console.log(`Month: ${fileMonth}`)
-					console.log(`Day: ${fileDay}`)
+					console.log(chalk`${os.EOL}{bgMagenta  ${file} } {magenta is not a .jpg but will be moved according to file create date. }`)
+					console.log(`Year: ${fileDate[0]}`)
+					console.log(`Month: ${fileDate[1]}`)
+					console.log(`Day: ${fileDate[2]}`)
 				}
-				// if not a file with exif data just move the file based on file date
-				
 				// check for directory and move file
+				setDirectory(fileDate)
+					.then(moveFile(file))
+					.catch(console.error)
 			}    
 
-	     });
+		 });
 
-    }
+	}
 
 });
 
