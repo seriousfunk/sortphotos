@@ -69,21 +69,29 @@ function setDirectory(fileDate) {
   let directory = path.join(program.destination, dateFolder)
 
   console.log('directory: ' + directory)
-
-  // Create directory if it does not already exists
-  let stats = fs.stat(directory, function (err, stat) {
-    if (err) {
-        console.log('wtf: ' + err);
-    }
-  })
-
-  if ( stats.isDirectory() ) {
-    console.log('dir exists')
-  }
-  else {
-    console.log('dir does NOT exists')
-  }
   
+    // Create directory if it does not already exists
+    let stats = fs.stat(directory, function (err, stats) {
+      if (err && err.code === 'ENOENT') {
+        mkdirp(directory, function (err) {
+          if (err) {
+            console.log(chalk`${os.EOL}{bgRed  mkdirp Error:} ${directory} ${err}`)
+            process.exit(6)
+          }
+          else {
+            console.log(chalk`${os.EOL}{green Creating new destination folder} ${directory}`)  
+          }
+        })
+      }
+      else {
+        console.log('directory already exists :)')
+      }
+    })
+
+
+
+
+  /*
   if ( stats.isDirectory() ) {
     mkdirp(directory, function (err) {
       if (err) {
@@ -105,7 +113,7 @@ function setDirectory(fileDate) {
  
   // Return directory where the photo should be placed
   return directory
-
+*/
 }
 
 function moveFile(directory, file) {
@@ -125,7 +133,8 @@ function getFiles() {
       console.log(chalk`{bgRed  fs.stat Error:} ${err}`)
       process.exit(1);
      }
-    for (let i=0; i<items.length; i++) {
+
+     for (let i=0; i<items.length; i++) {
       let file = program.source + '/' + items[i];
    
       fs.stat(file, function(err, stats) {
