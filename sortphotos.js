@@ -45,24 +45,26 @@ function setDirectory(fileDate) {
   const monthsLong = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   const monthsShort = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
+  let monthNumber = (parseInt(fileDate[1])+1).toString() // to account for ZERO based monthsLong and monthsShort arrays
+  
   // Compose directory based on folder set or default
   switch (program.folder) {
     case 'YYYY_MM':
-      dateFolder = `${fileDate[0]}_${fileDate[1].padStart(2, '0')}`
+      dateFolder = `${fileDate[0]}_${monthNumber.padStart(2, '0')}`
       break
     case 'YYYY_MM_DD':
-      dateFolder = `${fileDate[0]}_${fileDate[1].padStart(2, '0')}_${fileDate[2].padStart(2, '0')}`
+      dateFolder = `${fileDate[0]}_${monthNumber.padStart(2, '0')}_${fileDate[2].padStart(2, '0')}`
       break
     case 'YYYY/MM':
-      dateFolder = path.join(fileDate[0],fileDate[1].padStart(2, '0'))
+      dateFolder = path.join(fileDate[0],monthNumber.padStart(2, '0'))
       break
     case 'YYYY/MM-MON':
-    dateFolder = `${path.join(fileDate[0],fileDate[1].padStart(2, '0'))}-${monthsShort[fileDate[1]]}`
+    dateFolder = `${path.join(fileDate[0],monthNumber.padStart(2, '0'))}-${monthsShort[fileDate[1]]}`
       break      
     case 'YYYY/MM-Month':
-      dateFolder = `${path.join(fileDate[0],fileDate[1].padStart(2, '0'))}-${monthsLong[fileDate[1]]}`
+      dateFolder = `${path.join(fileDate[0],monthNumber.padStart(2, '0'))}-${monthsLong[fileDate[1]]}`
     default:
-      dateFolder = `${path.join(fileDate[0],fileDate[1].padStart(2, '0'))}-${monthsLong[fileDate[1]]}`
+      dateFolder = `${path.join(fileDate[0],monthNumber.padStart(2, '0'))}-${monthsLong[fileDate[1]]}`
   }
 
   // Combine destination folder with date structure they chose
@@ -133,7 +135,6 @@ function getFiles() {
                 // console.log(exifData)
                 
                 let fileDate = exifData.exif.CreateDate.split(/[:| ]/,3)
-                // subtract 1 from month to match Month array that starts at 0 for January
                 let logFileDate = fileDate[1]
                 fileDate[1] = fileDate[1]-1 // decrementing so log displays the correct month. monthsLong and monthsShort are ZERO based arrays
                 fileDate[1] = fileDate[1].toString()
