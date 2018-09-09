@@ -88,32 +88,8 @@ function setDirectory(fileDate) {
       }
     })
 
-
-
-
-  /*
-  if ( stats.isDirectory() ) {
-    mkdirp(directory, function (err) {
-      if (err) {
-        console.log(chalk`${os.EOL}{bgRed  mkdirp Error:} ${directory} ${err}`)
-        process.exit(6)
-      }
-      else {
-        if (program.dryRun) {
-          console.log(chalk`${os.EOL}{green Creating new destination folder} ${directory}`)
-        }
-      } 
-    });
-  }
-  else {
-    if (program.dryRun) {
-      console.log(chalk`${os.EOL}{blue Destination folder already exists} ${directory}.`)
-    }
-  }
- 
   // Return directory where the photo should be placed
-  return directory
-*/
+  return path.normalize(directory)
 }
 
 function moveFile(directory, file) {
@@ -135,7 +111,7 @@ function getFiles() {
      }
 
      for (let i=0; i<items.length; i++) {
-      let file = program.source + '/' + items[i];
+      let file =path.normalize(program.source + '/' + items[i])
    
       fs.stat(file, function(err, stats) {
   
@@ -153,14 +129,18 @@ function getFiles() {
                 process.exit(3)
               }
               else {
+               
+                // console.log(exifData)
+                
                 let fileDate = exifData.exif.CreateDate.split(/[:| ]/,3)
                 // subtract 1 from month to match Month array that starts at 0 for January
-                fileDate[1] = fileDate[1]-1
+                let logFileDate = fileDate[1]
+                fileDate[1] = fileDate[1]-1 // decrementing so log displays the correct month. monthsLong and monthsShort are ZERO based arrays
                 fileDate[1] = fileDate[1].toString()
                 if (program.dryRun) {
                   console.log(chalk`${os.EOL}{bgBlue  ${file} } {blue will be moved according to Exif date when the photo was taken.}`)
                   console.log(`Year: ${fileDate[0]}`)
-                  console.log(`Month: ${fileDate[1]}`)
+                  console.log(`Month: ${logFileDate[1]}`)
                   console.log(`Day: ${fileDate[2]}`)
                 }
                 
@@ -174,21 +154,20 @@ function getFiles() {
             console.log(chalk`{bgRed  Error: } ${error.message}`)
             process.exit(4)
           }
-  
-          // console.log(file);
-          // console.log(stats["size"]);
+
         }
         else {
           // MTIME
           let fileMtime= new Date(stats.mtime)
           let fileDate = []
           fileDate[0] = fileMtime.getFullYear().toString()
+          let logFileDate = fileMtime.getMonth()+1 // incrementing so log displays the correct month. monthsLong and monthsShort are ZERO based arrays
           fileDate[1] = fileMtime.getMonth().toString()
           fileDate[2] = fileMtime.getDate().toString()
           if (program.dryRun) {
             console.log(chalk`${os.EOL}{bgMagenta  ${file} } {magenta is not a .jpg but will be moved according to file create date. }`)
             console.log(`Year: ${fileDate[0]}`)
-            console.log(`Month: ${fileDate[1]}`)
+            console.log(`Month: ${logFileDate}`)
             console.log(`Day: ${fileDate[2]}`)
           }
             // Get path to directory we may need to create if it does not exist
