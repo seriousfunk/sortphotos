@@ -6,6 +6,7 @@ const os 		    = require("os")
 const mkdirp    = require('mkdirp');
 const program   = require('commander')
 const chalk     = require('chalk')
+const moment   = require('moment')
 const ExifImage = require('exif').ExifImage
 
 program
@@ -15,6 +16,7 @@ program
   .option('-d, --destination <destination>', 'Destination Directory (use quotes if directory contains spaces)')
   .option('-r, --recursive', 'recurse subdirectories')
   .option('-f --folder <format>', 'Folder Format', /^(YYYY_MM|YYYY_MM_DD|YYYY\/MM||YYYY\/MM-MON|YYYY\/MM-Month)$/i, 'YYYY\/MM-Month')
+  .option('-l --log [log_file]', 'Log file, including path', './logs/sortphotos-'+ moment().format('YYYY-MM-DD-HHmmss') +'.log' )
   .option('-x, --dry-run', 'Write to screen and log what would happen but do not do anything.')
   .on('--help', function() {
 	console.log()
