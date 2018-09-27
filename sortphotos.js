@@ -6,7 +6,7 @@ const os 		    = require("os")
 const mkdirp    = require('mkdirp');
 const program   = require('commander')
 const chalk     = require('chalk')
-const moment   = require('moment')
+const moment    = require('moment')
 const ExifImage = require('exif').ExifImage
 
 program
