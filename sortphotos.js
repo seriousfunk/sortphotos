@@ -36,16 +36,21 @@ if (!program.source || !program.destination) {
 
 function setupLogging() {
   return new Promise(resolve => {
-    if (program.log) {
-      const logFile = program.log
-    } 
-    else {
-      const logFile = path.join(program.source, 'logs/'+ moment().format('YYYY-MM-DD-HHmmss') +'.log')
-    }
+    let logFile = null
+    // set logFile path and name
+    if ( program.log ) logFile = path.normalize(program.log)
+    else logFile = path.join(program.source, 'logs/'+ moment().format('YYYY-MM-DD-HHmmss') +'.log')
+    console.log(logFile)
     // create log
-    mkdirp(logFile, function (err) {
+    let logPath = path.normalize(path.dirname(logFile))
+    console.log(logPath)
+    mkdirp(logPath, function (err) {
       if (err) console.log(chalk`${os.EOL}{bgRed  mkdirp Error: } {red ${err} }`)
-      else resolve(logFile)
+      let writeStream = fs.createWriteStream(logFile, {flags: 'w'})
+      writeStream.on('error', function(e){console.log(e)})
+      writeStream.write('still there?')
+      writeStream.end()
+      resolve(writeStream)
     });
   })
 }
@@ -53,10 +58,10 @@ function setupLogging() {
 
 
 if (program.dryRun || program.log) {
-  await setupLogging()
-  logIt('hello', 'console')
+  let ws = setupLogging()
+/*   logIt('hello', 'console')
   console.log(chalk`${os.EOL}{bgRed  Dry Run: } {red Not sorting and moving photos. Simply displaying and logging what we would do if this was not a dry-run.}`)
-  console.log(chalk`${os.EOL}{bold Destination folder structure: }  ${path.join(program.destination, program.folder)}`)
+  console.log(chalk`${os.EOL}{bold Destination folder structure: }  ${path.join(program.destination, program.folder)}`) */
 }
 
 
@@ -159,7 +164,9 @@ function logIt (msg, type) {
   if ( 'console' === type || 'both' === type ) {
     console.log(`MSG: ${msg} \nTYPE: ${type} `)
   }
-  if ( 'log' === type || 'both' === type )
+  if ( 'log' === type || 'both' === type ) {
+    null
+  }
 
 
 }
