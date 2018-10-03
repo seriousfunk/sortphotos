@@ -4,10 +4,9 @@ const fs 		    = require('fs')
 const path 		  = require('path')
 const os 		    = require("os")
 const mv        = require('mv');
-const mkdirp    = require('async-mkdirp');
+const moment    = require('moment');
 const program   = require('commander')
 const chalk     = require('chalk')
-const moment    = require('moment')
 const ExifImage = require('exif').ExifImage
 
 program
@@ -48,7 +47,13 @@ fs.readdir( program.source, function( err, files ) {
     console.log(fileDate)
     let toDir    = await setDirectory(fileDate)
     console.log(toDir)        
-
+    let newPath  = path.join(toDir, file)
+    console.log(`Moving ${filePath} to ${newPath}.`)  
+/*     await mv(filePath, toDir, {mkdirp: true}, function(err) {
+      console.log(chalk`{bgRed  mv Error: } ${err}`)
+      process.exit(7);
+    });
+ */
   })
   
 
