@@ -3,6 +3,7 @@
 const fs 		    = require('fs')
 const path 		  = require('path')
 const os 		    = require("os")
+const mv        = require('mv');
 const mkdirp    = require('mkdirp');
 const program   = require('commander')
 const chalk     = require('chalk')
@@ -98,7 +99,13 @@ function setDirectory(fileDate) {
 
 function moveFile(directory, file) {
   if (program.dryRun) {
-    console.log(chalk`${os.EOL} ${file} will be placed in ${directory}.`)
+    console.log(chalk`${os.EOL}${file} will be placed in ${directory}.`)
+  }
+  else {
+    mv($file, $directory, function(err) {
+      console.log(chalk`{bgRed  mv Error:} ${err}`)
+      process.exit(7);
+    });
   }
 }
 
@@ -135,23 +142,21 @@ function getFiles() {
               else {
                
                 // console.log(exifData)
-                
                 let fileDate = exifData.exif.CreateDate.split(/[:| ]/,3)
                 let logFileDate = fileDate[1]
                 fileDate[1] = fileDate[1]-1 // decrementing so log displays the correct month. monthsLong and monthsShort are ZERO based arrays
-                fileDate[1] = fileDate[1].toString()
+                fileDate[1] = fileDate[1]
                 if (program.dryRun) {
                   console.log(chalk`${os.EOL}{bgBlue  ${file} } {blue will be moved according to Exif date when the photo was taken.}`)
                   console.log(`Year: ${fileDate[0]}`)
-                  console.log(`Month: ${logFileDate[1]}`)
+                  console.log(`Month: ${logFileDate}`)
                   console.log(`Day: ${fileDate[2]}`)
                 }
                 
                 // Get path to directory we may need to create if it does not exist
                 let directory = setDirectory(fileDate)
                 moveFile(directory, file)
-  
-              }
+                }
             });
           } catch (error) {
             console.log(chalk`{bgRed  Error: } ${error.message}`)

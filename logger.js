@@ -39,13 +39,22 @@ const StripAnsiAppender = function() {
       var fields = appender.formatEntry( entry );
       fields[2] = stripAnsi(fields[2])
       console.log(`${stripAnsi(fields[2])} -- with ansi stripped.\n`)
-      // console.log('\n\nfields:' + fields + '\n\n')
     };
 };
 
 log.addAppender(new StripAnsiAppender())
-// snl.appenders['FileAppender'].
 
+// ***********************************************************************
+// How would I override FileAppender so that it strips ansi characters?
+// ***********************************************************************
+
+/* log.appenders['FileAppender'].formatter = function(entry) {
+  const fields = appender.formatEntry( entry );
+  fields[2] = stripAnsi(fields[2])
+  // add new line (for linux and windows)
+  fields.push( newline );
+  return fields.join( appender.separator );
+}; */
 
 // console.log(log.getAppenders())
 
