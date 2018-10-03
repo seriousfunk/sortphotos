@@ -3,6 +3,7 @@
 const fs 		    = require('fs')
 const path 		  = require('path')
 const os 		    = require("os")
+const mkdirp    = require('mkdirp');
 const moveFile  = require('move-file');
 const moment    = require('moment');
 const program   = require('commander')
@@ -32,6 +33,32 @@ if (!program.source || !program.destination) {
 	console.log(chalk`${os.EOL}{bgRed  Error: } {red source and destination folder required.}`)
 	program.help()
 }
+
+function setupLogging() {
+  return new Promise(resolve => {
+    if (program.log) {
+      const logFile = program.log
+    } 
+    else {
+      const logFile = path.join(program.source, 'logs/'+ moment().format('YYYY-MM-DD-HHmmss') +'.log')
+    }
+    // create log
+    mkdirp(logFile, function (err) {
+      if (err) console.log(chalk`${os.EOL}{bgRed  mkdirp Error: } {red ${err} }`)
+      else resolve(logFile)
+    });
+  })
+}
+
+
+
+if (program.dryRun || program.log) {
+  await setupLogging()
+  logIt('hello', 'console')
+  console.log(chalk`${os.EOL}{bgRed  Dry Run: } {red Not sorting and moving photos. Simply displaying and logging what we would do if this was not a dry-run.}`)
+  console.log(chalk`${os.EOL}{bold Destination folder structure: }  ${path.join(program.destination, program.folder)}`)
+}
+
 
 fs.readdir( program.source, function( err, files ) {
 
@@ -123,3 +150,16 @@ function setDirectory(fileDate) {
   });
 }
 
+// log to console, file or both
+function logIt (msg, type) {
+  if (!msg || !type) {
+    console.log(chalk`{bgRed  Logging Error: } Message and Log type needed.`)    
+    process.exit( 1 )
+  }
+  if ( 'console' === type || 'both' === type ) {
+    console.log(`MSG: ${msg} \nTYPE: ${type} `)
+  }
+  if ( 'log' === type || 'both' === type )
+
+
+}
