@@ -4,7 +4,7 @@ const fs 		    = require('fs')
 const path 		  = require('path')
 const os 		    = require("os")
 const mv        = require('mv');
-const mkdirp    = require('mkdirp');
+const mkdirp    = require('async-mkdirp');
 const program   = require('commander')
 const chalk     = require('chalk')
 const moment    = require('moment')
@@ -74,10 +74,21 @@ function setDirectory(fileDate) {
     // Combine destination folder with date structure they chose
     let directory = path.join(program.destination, dateFolder)
 
-      // Create directory if it does not already exists
-    let stats = fs.stat(directory, async function (err, stats) {
+    // Create directory if it does not already exists
+    let stats = fs.stat(directory, function (err, stats) {
       if (err && err.code === 'ENOENT') {
-        console.log('make dir')
+        (async () => {
+          await mkdirp(directory);
+            resolve(path.normalize(directory))
+        })();
+      }
+      else {
+        // directory already exists
+        resolve(path.normalize(directory))
+      }
+    })
+
+/*         console.log('make dir')
         await mkdirp(directory, function (err) {
           if (err) {
             console.log(chalk`${os.EOL}{bgRed  mkdirp Error: } ${directory} ${err}`)
@@ -101,17 +112,17 @@ function setDirectory(fileDate) {
 
     // Return directory where the photo should be placed
     resolve(path.normalize(directory))
-
+ */
   }) // Promise
 }
 
-function moveFile(directory, file) {
+async function moveFile(directory, file) {
   let newLocation = path.join(directory, path.basename(file));
   if (program.dryRun) {
     console.log(chalk`${os.EOL}${file} will be moved to ${newLocation}.`)
   }
   else {
-    mv(file, newLocation, function(err) {
+    await mv(file, newLocation, function(err) {
       console.log(chalk`{bgRed  mv Error: } ${err}`)
       process.exit(7);
     });
@@ -121,6 +132,29 @@ function moveFile(directory, file) {
 // TODO: msg about creating or writing to log file in log directory
 if (program.dryRun) {
   console.log(`${os.EOL}Logging sortphotos activity. Run ${new Date}.`)
+}
+
+function getExifData(file) {
+  return new Promise(resolve => {
+
+    try {
+
+      new ExifImage({ image : file }, function (error, exifData) {
+
+        if (error) {
+          console.log(chalk`{bgRed  ExifImage Error: } ${file} ${error.message}`)
+          process.exit(3)
+        }
+
+        resolve(exifData)
+      })
+
+    } catch (error) {
+      console.log(chalk`{bgRed  ExifImage Error: } ${error.message}`)
+      process.exit(4)
+    }
+
+  })
 }
 
 function getFiles() {
@@ -135,44 +169,31 @@ function getFiles() {
       // let file2 = path.normalize(program.source + '/' + items[i])
       let file = path.join(program.source, items[i])
    
-      fs.stat(file, function(err, stats) {
+      fs.stat(file, async function(err, stats) {
   
         if (err) {
           console.log(chalk`{bgRed  fs.stat Error: } ${file} ${err}`)
           process.exit(2)
         }
   
-        if ('.jpg' == path.extname(file)) {
-  
-          try {
-            new ExifImage({ image : file }, function (error, exifData) {
-              if (error) {
-                console.log(chalk`{bgRed  ExifImage Error: } ${file} ${error.message}`)
-                process.exit(3)
-              }
-              else {
-               
-                // console.log(exifData)
-                let fileDate = exifData.exif.CreateDate.split(/[:| ]/,3)
-                let logFileDate = fileDate[1]
-                fileDate[1] = fileDate[1]-1 // decrementing so log displays the correct month. monthsLong and monthsShort are ZERO based arrays
-                fileDate[1] = fileDate[1].toString()
-                if (program.dryRun) {
-                  console.log(chalk`${os.EOL}{bgBlue  ${file} } {blue will be moved according to Exif date when the photo was taken.}`)
-                  console.log(`Year: ${fileDate[0]}`)
-                  console.log(`Month: ${logFileDate}`)
-                  console.log(`Day: ${fileDate[2]}`)
-                }
-                
-                // Get path to directory we may need to create if it does not exist
-                setDirectory(fileDate).then((directory)=>moveFile(directory, file));
-                }
-            });
-          } catch (error) {
-            console.log(chalk`{bgRed  Error: } ${error.message}`)
-            process.exit(4)
-          }
+ if ('.jpg' == path.extname(file)) {
 
+          let exifData = await getExifData(file)
+
+          // console.log(exifData)
+          let fileDate = exifData.exif.CreateDate.split(/[:| ]/,3)
+          let logFileDate = fileDate[1]
+          fileDate[1] = fileDate[1]-1 // decrementing so log displays the correct month. monthsLong and monthsShort are ZERO based arrays
+          fileDate[1] = fileDate[1].toString()
+          if (program.dryRun) {
+            console.log(chalk`${os.EOL}{bgBlue  ${file} } {blue will be moved according to Exif date when the photo was taken.}`)
+            console.log(`Year: ${fileDate[0]}`)
+            console.log(`Month: ${logFileDate}`)
+            console.log(`Day: ${fileDate[2]}`)
+          }
+          // Get path to directory we may need to create if it does not exist
+          setDirectory(fileDate).then((directory)=>moveFile(directory, file));
+          
         }
         else {
           // MTIME
@@ -189,12 +210,10 @@ function getFiles() {
             console.log(`Day: ${fileDate[2]}`)
           }
             // Get path to directory we may need to create if it does not exist
-/*             let directory = setDirectory(fileDate)
-            moveFile(directory, file) */
             setDirectory(fileDate).then((directory)=>moveFile(directory, file));
           }    
 
-      });
+      });       
   
     }
   

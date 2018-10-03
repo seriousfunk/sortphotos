@@ -9,7 +9,7 @@
       "type": "node",
       "request": "launch",
       "name": "Launch Program",
-      "program": "${workspaceFolder}\\sortphotos.js",
+      "program": "${workspaceFolder}\\sortphotos2.js",
       "args": [
         "-s", "c:\\temp\\pic0",
         "-d", "c:\\temp\\picx",
