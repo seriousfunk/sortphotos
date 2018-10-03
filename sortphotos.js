@@ -39,71 +39,80 @@ else {
 
 if (program.dryRun) {
   console.log(chalk`${os.EOL}{bgRed  Dry Run: } {red Not sorting and moving photos. Simply displaying and logging what we would do if this was not a dry-run.}`)
-  console.log(chalk`${os.EOL}{bold Destination folder structure:}  ${path.join(program.destination, program.folder)}`)
+  console.log(chalk`${os.EOL}{bold Destination folder structure: }  ${path.join(program.destination, program.folder)}`)
 }
 
-// create the directory if it doesn't existh
+// create the directory if it doesn't exist
 function setDirectory(fileDate) {
-  let dateFolder = null
-  const monthsLong = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  const monthsShort = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+  return new Promise(resolve => {
+    let dateFolder = null
+    const monthsLong = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const monthsShort = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
-  let monthNumber = (parseInt(fileDate[1])+1).toString() // to account for ZERO based monthsLong and monthsShort arrays
-  
-  // Compose directory based on folder set or default
-  switch (program.folder) {
-    case 'YYYY_MM':
-      dateFolder = `${fileDate[0]}_${monthNumber.padStart(2, '0')}`
-      break
-    case 'YYYY_MM_DD':
-      dateFolder = `${fileDate[0]}_${monthNumber.padStart(2, '0')}_${fileDate[2].padStart(2, '0')}`
-      break
-    case 'YYYY/MM':
-      dateFolder = path.join(fileDate[0],monthNumber.padStart(2, '0'))
-      break
-    case 'YYYY/MM-MON':
-    dateFolder = `${path.join(fileDate[0],monthNumber.padStart(2, '0'))}-${monthsShort[fileDate[1]]}`
-      break      
-    case 'YYYY/MM-Month':
-      dateFolder = `${path.join(fileDate[0],monthNumber.padStart(2, '0'))}-${monthsLong[fileDate[1]]}`
-    default:
-      dateFolder = `${path.join(fileDate[0],monthNumber.padStart(2, '0'))}-${monthsLong[fileDate[1]]}`
-  }
+    let monthNumber = (parseInt(fileDate[1])+1).toString() // to account for ZERO based monthsLong and monthsShort arrays
+    
+    // Compose directory based on folder set or default
+    switch (program.folder) {
+      case 'YYYY_MM':
+        dateFolder = `${fileDate[0]}_${monthNumber.padStart(2, '0')}`
+        break
+      case 'YYYY_MM_DD':
+        dateFolder = `${fileDate[0]}_${monthNumber.padStart(2, '0')}_${fileDate[2].padStart(2, '0')}`
+        break
+      case 'YYYY/MM':
+        dateFolder = path.join(fileDate[0],monthNumber.padStart(2, '0'))
+        break
+      case 'YYYY/MM-MON':
+      dateFolder = `${path.join(fileDate[0],monthNumber.padStart(2, '0'))}-${monthsShort[fileDate[1]]}`
+        break      
+      case 'YYYY/MM-Month':
+        dateFolder = `${path.join(fileDate[0],monthNumber.padStart(2, '0'))}-${monthsLong[fileDate[1]]}`
+      default:
+        dateFolder = `${path.join(fileDate[0],monthNumber.padStart(2, '0'))}-${monthsLong[fileDate[1]]}`
+    }
 
-  // Combine destination folder with date structure they chose
-  let directory = path.join(program.destination, dateFolder)
+    // Combine destination folder with date structure they chose
+    let directory = path.join(program.destination, dateFolder)
 
-  console.log('directory: ' + directory)
-  
-    // Create directory if it does not already exists
-    let stats = fs.stat(directory, function (err, stats) {
+      // Create directory if it does not already exists
+    let stats = fs.stat(directory, async function (err, stats) {
       if (err && err.code === 'ENOENT') {
-        mkdirp(directory, function (err) {
+        console.log('make dir')
+        await mkdirp(directory, function (err) {
           if (err) {
-            console.log(chalk`${os.EOL}{bgRed  mkdirp Error:} ${directory} ${err}`)
+            console.log(chalk`${os.EOL}{bgRed  mkdirp Error: } ${directory} ${err}`)
             process.exit(6)
           }
           else {
-            console.log(chalk`${os.EOL}{green Creating new destination folder} ${directory}`)  
+            console.log('** Creating new destination folder')
+            if (program.dryRun) {
+              console.log(chalk`${os.EOL}{green  Creating new destination folder } ${directory}`)  
+            }
           }
         })
       }
       else {
-        console.log('directory already exists :)')
+        console.log('** directory already exists')  
+        if (program.dryRun) {
+          console.log('directory already exists :)')
+        }
       }
     })
 
-  // Return directory where the photo should be placed
-  return path.normalize(directory)
+    // Return directory where the photo should be placed
+    resolve(path.normalize(directory))
+
+  }) // Promise
 }
 
 function moveFile(directory, file) {
+  let newLocation = path.join(directory, path.basename(file));
   if (program.dryRun) {
-    console.log(chalk`${os.EOL}${file} will be placed in ${directory}.`)
+    console.log(chalk`${os.EOL}${file} will be moved to ${newLocation}.`)
   }
   else {
-    mv($file, $directory, function(err) {
-      console.log(chalk`{bgRed  mv Error:} ${err}`)
+    mv(file, newLocation, function(err) {
+      console.log(chalk`{bgRed  mv Error: } ${err}`)
       process.exit(7);
     });
   }
@@ -117,17 +126,19 @@ if (program.dryRun) {
 function getFiles() {
   fs.readdir(program.source, function(err, items) {
     if (err) {
-      console.log(chalk`{bgRed  fs.stat Error:} ${err}`)
+      console.log(chalk`{bgRed  fs.stat Error: } ${err}`)
       process.exit(1);
      }
 
      for (let i=0; i<items.length; i++) {
-      let file =path.normalize(program.source + '/' + items[i])
+
+      // let file2 = path.normalize(program.source + '/' + items[i])
+      let file = path.join(program.source, items[i])
    
       fs.stat(file, function(err, stats) {
   
         if (err) {
-          console.log(chalk`{bgRed  fs.stat Error:} ${file} ${err}`)
+          console.log(chalk`{bgRed  fs.stat Error: } ${file} ${err}`)
           process.exit(2)
         }
   
@@ -136,7 +147,7 @@ function getFiles() {
           try {
             new ExifImage({ image : file }, function (error, exifData) {
               if (error) {
-                console.log(chalk`{bgRed  ExifImage Error:} ${file} ${error.message}`)
+                console.log(chalk`{bgRed  ExifImage Error: } ${file} ${error.message}`)
                 process.exit(3)
               }
               else {
@@ -145,7 +156,7 @@ function getFiles() {
                 let fileDate = exifData.exif.CreateDate.split(/[:| ]/,3)
                 let logFileDate = fileDate[1]
                 fileDate[1] = fileDate[1]-1 // decrementing so log displays the correct month. monthsLong and monthsShort are ZERO based arrays
-                fileDate[1] = fileDate[1]
+                fileDate[1] = fileDate[1].toString()
                 if (program.dryRun) {
                   console.log(chalk`${os.EOL}{bgBlue  ${file} } {blue will be moved according to Exif date when the photo was taken.}`)
                   console.log(`Year: ${fileDate[0]}`)
@@ -154,8 +165,7 @@ function getFiles() {
                 }
                 
                 // Get path to directory we may need to create if it does not exist
-                let directory = setDirectory(fileDate)
-                moveFile(directory, file)
+                setDirectory(fileDate).then((directory)=>moveFile(directory, file));
                 }
             });
           } catch (error) {
@@ -179,11 +189,12 @@ function getFiles() {
             console.log(`Day: ${fileDate[2]}`)
           }
             // Get path to directory we may need to create if it does not exist
-            let directory = setDirectory(fileDate)
-            moveFile(directory, file)
-        }    
-  
-       });
+/*             let directory = setDirectory(fileDate)
+            moveFile(directory, file) */
+            setDirectory(fileDate).then((directory)=>moveFile(directory, file));
+          }    
+
+      });
   
     }
   
