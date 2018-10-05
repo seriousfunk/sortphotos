@@ -34,36 +34,21 @@ if (!program.source || !program.destination) {
 	program.help()
 }
 
-function setupLogging() {
-  return new Promise(resolve => {
-    let logFile = null
-    // set logFile path and name
-    if ( program.log ) logFile = path.normalize(program.log)
-    else logFile = path.join(program.source, 'logs/'+ moment().format('YYYY-MM-DD-HHmmss') +'.log')
-    console.log(logFile)
-    // create log
-    let logPath = path.normalize(path.dirname(logFile))
-    console.log(logPath)
-    mkdirp(logPath, function (err) {
-      if (err) console.log(chalk`${os.EOL}{bgRed  mkdirp Error: } {red ${err} }`)
-      let writeStream = fs.createWriteStream(logFile, {flags: 'w'})
-      writeStream.on('error', function(e){console.log(e)})
-      writeStream.write('still there?')
-      writeStream.end()
-      resolve(writeStream)
-    });
-  })
-}
-
-
 
 if (program.dryRun || program.log) {
-  let ws = setupLogging()
-/*   logIt('hello', 'console')
+  let logPath = path.normalize(path.dirname(program.log))
+  mkdirp.sync(logPath, function (err) {
+    if (err) console.log(chalk`${os.EOL}{bgRed  mkdirp Error: } {red ${err} }`)
+  })
+    /*   logIt('hello', 'console')
   console.log(chalk`${os.EOL}{bgRed  Dry Run: } {red Not sorting and moving photos. Simply displaying and logging what we would do if this was not a dry-run.}`)
   console.log(chalk`${os.EOL}{bold Destination folder structure: }  ${path.join(program.destination, program.folder)}`) */
+  let writeStream = fs.createWriteStream(path.normalize(program.log), {flags: 'w'})
+  writeStream.on('error', function(e){console.log(e)})
+  writeStream.write('ready?')
 }
 
+writeStream.write('GO!')
 
 fs.readdir( program.source, function( err, files ) {
 
