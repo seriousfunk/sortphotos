@@ -4,12 +4,12 @@ NodeJS script for organizing photos into a Date folder structure (e.g. YYYY/MM-M
 
 Options
 ----------------------
-* -s --source <source> : Source Directory (use quotes if directory contains spaces)
-* -d --destination <destination> : Destination Directory (use quotes if directory contains spaces)
-* -r --recursive : Recurse subdirectories
-* -f --folder <format> : Folder Format (YYYY_MM | YYYY_MM_DD | YYYY/MM | YYYY/MM-MON | YYYY/MM-Month), Default: YYYY/MM-Month
-* -l --log [log_file] : Log file, including path, Default: ./logs/sortphotos-YYYY-MM-DD-HHmmss.log
-* -x --dry-run : Write to screen and log what would happen but do not do anything
+* -s, --source <source> : Source Directory (use quotes if directory contains spaces)
+* -d, --destination <destination> : Destination Directory (use quotes if directory contains spaces)
+* -r, --recursive : Recurse subdirectories
+* -f, --folder <format> : Folder Format (YYYY_MM | YYYY_MM_DD | YYYY/MM | YYYY/MM-MON | YYYY/MM-Month), Default: YYYY/MM-Month
+* -l, --log [log_file] : Log file, including path, Default: ./logs/sortphotos-YYYY-MM-DD-HHmmss.log
+* -x, --dry-run : Write to screen and log what would happen but do not do anything
 
 Feature Suggestions
 ----------------------
