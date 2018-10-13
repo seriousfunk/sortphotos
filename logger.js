@@ -7,9 +7,11 @@ const mkdirp    = require('mkdirp')
 const chalk     = require('chalk')
 const stripAnsi = require('strip-ansi')
 
+// Log file including path
+const logPath = 'logs/stripAnsi.log'
 
-const logFile = 'logs/matt.log'
-const logDir  = path.dirname(path.normalize(logFile))
+const logDir      = path.dirname(path.normalize(logPath))
+const logFile     = path.basename(logPath)
 
 
 mkdirp(logDir, function (err) {
@@ -19,17 +21,17 @@ mkdirp(logDir, function (err) {
   }
 })
 
-const log = snl.createSimpleLogger(logFile)
+const log = snl.createSimpleLogger()
 
 const AbstractAppender = snl.AbstractAppender;
 
-const StripAnsiAppender = function() {
+const StripAnsiAppender = function(logPath) {
   'use strict';
   var appender = this;
   
     var opts = {
-        typeName:'StripAnsiAppender'
-        
+        typeName: 'StripAnsiAppender',
+        logFile: logPath
     };
     
     AbstractAppender.extend( this, opts );
@@ -38,7 +40,7 @@ const StripAnsiAppender = function() {
     this.write = function(entry) {
       var fields = appender.formatEntry( entry );
       fields[2] = stripAnsi(fields[2])
-      console.log(`${stripAnsi(fields[2])} -- with ansi stripped.\n`)
+      // console.log(`${stripAnsi(fields[2])} -- with ansi stripped.\n`)
     };
 };
 

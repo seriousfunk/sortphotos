@@ -7,6 +7,7 @@ const mkdirp    = require('mkdirp');
 const moveFile  = require('move-file');
 const moment    = require('moment');
 const program   = require('commander')
+const snl       = require('simple-node-logger')
 const chalk     = require('chalk')
 const ExifImage = require('exif').ExifImage
 
@@ -34,38 +35,38 @@ if (!program.source || !program.destination) {
 	program.help()
 }
 
+let log = null
 
 if (program.dryRun || program.log) {
   let logPath = path.normalize(path.dirname(program.log))
   mkdirp.sync(logPath, function (err) {
     if (err) console.log(chalk`${os.EOL}{bgRed  mkdirp Error: } {red ${err} }`)
   })
-    /*   logIt('hello', 'console')
-  console.log(chalk`${os.EOL}{bgRed  Dry Run: } {red Not sorting and moving photos. Simply displaying and logging what we would do if this was not a dry-run.}`)
-  console.log(chalk`${os.EOL}{bold Destination folder structure: }  ${path.join(program.destination, program.folder)}`) */
-  let writeStream = fs.createWriteStream(path.normalize(program.log), {flags: 'w'})
-  writeStream.on('error', function(e){console.log(e)})
-  writeStream.write('ready?')
+  log = snl.createSimpleLogger(path.normalize(program.log))
+  log.info(`Dry Run: Not sorting and moving photos. Simply displaying and logging what we would do if this was not a dry-run`)
+  log.info(`Destination folder structure: ${path.join(program.destination, program.folder)}`)
 }
-
-writeStream.write('GO!')
 
 fs.readdir( program.source, function( err, files ) {
 
   if( err ) {
-      console.error( "Could not list the directory.", err );
+      log.error(`Could not read list of files. ${err}`);
       process.exit( 1 );
   } 
 
   files.forEach( async function( file, index ) {
     let filePath = path.join(program.source, file)  
-    console.log(filePath)
+    log.info(filePath)
+    
     let fileDate = await getFileDate(filePath)
-    console.log(fileDate)
+    log.info(fileDate)
+    
     let toDir    = await setDirectory(fileDate)
-    console.log(toDir)        
+    log.info(toDir)        
+    
     let newPath  = path.join(toDir, file)
-    console.log(`Moving ${filePath} to ${newPath}.`)  
+    log.info(`Moving ${filePath} to ${newPath}.`)  
+    
     await moveFile(filePath, newPath)
   })
 
