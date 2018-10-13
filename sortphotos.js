@@ -19,7 +19,7 @@ program
   .option('-d, --destination <destination>', 'Destination Directory (use quotes if directory contains spaces)')
   .option('-r, --recursive', 'recurse subdirectories')
   .option('-f --folder <format>', 'Folder Format', /^(YYYY_MM|YYYY_MM_DD|YYYY\/MM||YYYY\/MM-MON|YYYY\/MM-Month)$/i, 'YYYY\/MM-Month')
-  .option('-l --log [log_file]', 'Log file, including path', './logs/sortphotos-'+ moment().format('YYYY-MM-DD-HHmmss') +'.log' )
+  .option('-l --log [log_file]', 'Log file, including path', '<source_directory>/logs/sortphotos-'+ moment().format('YYYY-MM-DD-HHmmss') +'.log' )
   .option('-x, --dry-run', 'Write to screen and log what would happen but do not do anything.')
   .on('--help', function() {
 	console.log()
@@ -39,16 +39,29 @@ if (!program.source || !program.destination) {
 let log = null
 
 if (program.dryRun || program.log) {
+  program.log = program.log.replace("<source_directory>", program.source);
   let logPath = path.normalize(path.dirname(program.log))
   mkdirp.sync(logPath, function (err) {
     if (err) console.log(chalk`${os.EOL}{bgRed  mkdirp Error: } {red ${err} }`)
   })
   log = snl.createSimpleLogger(path.normalize(program.log))
   log.info(`Dry Run: Not sorting and moving photos. Simply displaying and logging what we would do if this was not a dry-run`)
+  log.info(`Logging info to console and log file ${path.normalize(program.log)}`)
   log.info(`Destination folder structure: ${path.join(program.destination, program.folder)}`)
 }
 
-recursive( program.source, function( err, files ) {
+// function to determine what files and/or directories to exclude
+function ignoreFunc(file, stats) {
+  if ( stats.isDirectory() ) {
+    // return stats.isDirectory() && ( path.basename(file) == "log" || path.basename(file) == "logs");
+    return path.basename(file) == "log" || path.basename(file) == "logs"
+  }
+  else {
+    return path.extname(file) == '.log' || path.extname(file) == '.txt'
+  }
+}
+
+recursive( program.source, [ignoreFunc], function( err, files ) {
 
   if( err ) {
       log.error(`Could not read list of files. ${err}`);
