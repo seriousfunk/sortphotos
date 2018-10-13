@@ -8,6 +8,7 @@ const moveFile  = require('move-file');
 const moment    = require('moment');
 const program   = require('commander')
 const snl       = require('simple-node-logger')
+const recursive = require("recursive-readdir");
 const chalk     = require('chalk')
 const ExifImage = require('exif').ExifImage
 
@@ -47,18 +48,21 @@ if (program.dryRun || program.log) {
   log.info(`Destination folder structure: ${path.join(program.destination, program.folder)}`)
 }
 
-fs.readdir( program.source, function( err, files ) {
+recursive( program.source, function( err, files ) {
 
   if( err ) {
       log.error(`Could not read list of files. ${err}`);
       process.exit(1);
   } 
+  
+  // console.log(files);
 
   files.forEach( async function( file, index ) {
-    let filePath = path.join(program.source, file)  
+    // let filePath = path.join(program.source, file)  
+    let filePath = path.normalize(file)  
     let fileDate = await getFileDate(filePath)
     let toDir    = await setDirectory(fileDate)
-    let newPath  = path.join(toDir, file)
+    let newPath  = path.join(toDir, path.basename(file))
     if (program.dryRun) {
       log.info(`Would move ${filePath} to ${newPath}`)
     }
@@ -66,7 +70,8 @@ fs.readdir( program.source, function( err, files ) {
       await moveFile(filePath, newPath)
       log.info(`Moved ${filePath} to ${newPath}`)
     }
-  })
+  }) 
+
 });
 
 function getFileDate(file) {
