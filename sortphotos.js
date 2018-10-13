@@ -42,7 +42,7 @@ if (program.dryRun || program.log) {
   program.log = program.log.replace("<source_directory>", program.source);
   let logPath = path.normalize(path.dirname(program.log))
   mkdirp.sync(logPath, function (err) {
-    if (err) console.log(chalk`${os.EOL}{bgRed  mkdirp Error: } {red ${err} }`)
+    if (err) log.error(`${os.EOL}********${os.EOL}mkdirp Error: ${err}${os.EOL}******** `)
   })
   log = snl.createSimpleLogger(path.normalize(program.log))
   log.info(`Dry Run: Not sorting and moving photos. Simply displaying and logging what we would do if this was not a dry-run`)
@@ -77,7 +77,7 @@ recursive( program.source, [ignoreFunc], function( err, files ) {
     let toDir    = await setDirectory(fileDate)
     let newPath  = path.join(toDir, path.basename(file))
     if (program.dryRun) {
-      log.info(`Would move ${filePath} to ${newPath}`)
+      log.info(`Dry Run: Would move ${filePath} to ${newPath}`)
     }
     else {
       await moveFile(filePath, newPath)
@@ -94,17 +94,19 @@ function getFileDate(file) {
       try {
         new ExifImage({ image : file }, function (error, exifData) {
           if (error) {
-            console.log(chalk`{bgRed  ExifImage Error: } ${file} ${error.message}`)
+            log.error(`${os.EOL}********${os.EOL}ExifImage Error:  ${file} ${error.message} ${os.EOL}******** `)
             process.exit(1)
           }
-          fileDate = exifData.exif.CreateDate.split(/[:| ]/,3)
-          let logFileDate = fileDate[1]
-          fileDate[1] = fileDate[1]-1 // decrementing so log displays the correct month. monthsLong and monthsShort are ZERO based arrays
-          fileDate[1] = fileDate[1].toString()
+          if (exifData.exif.CreateDate) {
+            fileDate = exifData.exif.CreateDate.split(/[:| ]/,3)
+            let logFileDate = fileDate[1]
+            fileDate[1] = fileDate[1]-1 // decrementing so log displays the correct month. monthsLong and monthsShort are ZERO based arrays
+            fileDate[1] = fileDate[1].toString()
+          }
         })
       }
       catch (error) {
-        console.log(chalk`{bgRed  ExifImage Error: } ${error.message}`)
+        log.error(`${os.EOL}********${os.EOL}ExifImage Error: ${error.message} ${os.EOL}******** `)
         process.exit(1)
       }
     }
