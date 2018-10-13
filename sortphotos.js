@@ -51,25 +51,22 @@ fs.readdir( program.source, function( err, files ) {
 
   if( err ) {
       log.error(`Could not read list of files. ${err}`);
-      process.exit( 1 );
+      process.exit(1);
   } 
 
   files.forEach( async function( file, index ) {
     let filePath = path.join(program.source, file)  
-    log.info(filePath)
-    
     let fileDate = await getFileDate(filePath)
-    log.info(fileDate)
-    
     let toDir    = await setDirectory(fileDate)
-    log.info(toDir)        
-    
     let newPath  = path.join(toDir, file)
-    log.info(`Moving ${filePath} to ${newPath}.`)  
-    
-    await moveFile(filePath, newPath)
+    if (program.dryRun) {
+      log.info(`Would move ${filePath} to ${newPath}`)
+    }
+    else {
+      await moveFile(filePath, newPath)
+      log.info(`Moved ${filePath} to ${newPath}`)
+    }
   })
-
 });
 
 function getFileDate(file) {
@@ -141,18 +138,4 @@ function setDirectory(fileDate) {
   });
 }
 
-// log to console, file or both
-function logIt (msg, type) {
-  if (!msg || !type) {
-    console.log(chalk`{bgRed  Logging Error: } Message and Log type needed.`)    
-    process.exit( 1 )
-  }
-  if ( 'console' === type || 'both' === type ) {
-    console.log(`MSG: ${msg} \nTYPE: ${type} `)
-  }
-  if ( 'log' === type || 'both' === type ) {
-    null
-  }
 
-
-}
