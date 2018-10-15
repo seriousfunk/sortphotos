@@ -25,7 +25,7 @@ program
     "-d, --destination <destination>",
     "Destination Directory (use quotes if directory contains spaces)"
   )
-  .option("-r, --recursive", "recurse subdirectories")
+  // .option("-r, --recursive", "recurse subdirectories")
   .option(
     "-f --folder <format>",
     "Folder Format",
@@ -42,6 +42,11 @@ program
   .option(
     "-x, --dry-run",
     "Write to screen and log what would happen but do not do anything."
+  )
+  .option(
+    "-o, --older-than [14]",
+    "Only move files older than 14 days.",
+    "14"
   )
   .on("--help", function() {
     console.log();
@@ -86,6 +91,9 @@ if (program.dryRun || program.log) {
     `Logging info to console and log file ${path.normalize(program.log)}`
   );
   log.info(
+    `Only moving files older than ${program.olderThan}`
+  );  
+  log.info(
     `Destination folder structure: ${path.join(
       program.destination,
       program.folder
@@ -95,11 +103,17 @@ if (program.dryRun || program.log) {
 
 // function to determine what files and/or directories to exclude
 function ignoreFunc(file, stats) {
+  // Ignore directories names log or logs
   if (stats.isDirectory()) {
-    // return stats.isDirectory() && ( path.basename(file) == "log" || path.basename(file) == "logs");
     return path.basename(file) == "log" || path.basename(file) == "logs";
-  } else {
-    return path.extname(file) == ".log" || path.extname(file) == ".txt";
+  }
+  // Ignore files with a .log extension
+  if ( path.extname(file) == ".log" ) {
+    return true
+  }
+  // Ignore files less than N days old
+  if (stats.mtime < moment().subtract(14, "days")) {
+    return true
   }
 }
 
