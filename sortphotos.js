@@ -91,7 +91,7 @@ if (program.dryRun || program.log) {
     `Logging info to console and log file ${path.normalize(program.log)}`
   );
   log.info(
-    `Only moving files older than ${program.olderThan}`
+    `Only moving files older than ${program.olderThan} days old`
   );  
   log.info(
     `Destination folder structure: ${path.join(
@@ -112,7 +112,8 @@ function ignoreFunc(file, stats) {
     return true
   }
   // Ignore files less than N days old
-  if (stats.mtime < moment().subtract(14, "days")) {
+    
+  if (stats.mtime > moment().subtract(program.olderThan, "days")) {
     return true
   }
 }
