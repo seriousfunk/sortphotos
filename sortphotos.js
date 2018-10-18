@@ -44,8 +44,8 @@ program
     "Write to screen and log what would happen but do not do anything."
   )
   .option(
-    "-o, --older-than [14]",
-    "Only move files older than 14 days.",
+    "-o, --older-than [30]",
+    "Only move files older than 30 days.",
     "14"
   )
   .on("--help", function() {
