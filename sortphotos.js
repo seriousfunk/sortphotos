@@ -75,14 +75,16 @@ if (program.dryRun || program.log) {
   let logPath = path.normalize(path.dirname(program.log))
   mkdirp.sync(logPath, function(err) {
     if (err)
-      log.error(
+      console.log(
         `${os.EOL}********${os.EOL}mkdirp Error: ${err}${os.EOL}******** `
       )
   })
   log = snl.createSimpleLogger(path.normalize(program.log))
-  log.info(
-    `Dry Run: Not sorting and moving photos. Simply displaying and logging what we would do if this was not a dry-run`
-  )
+  if (program.dryRun) {
+    log.info(
+      `Dry Run: Not sorting and moving photos. Simply displaying and logging what we would do if this was not a dry-run`
+    )
+  }
   log.info(
     `Logging info to console and log file ${path.normalize(program.log)}`
   )
@@ -97,7 +99,7 @@ if (program.dryRun || program.log) {
 
 // function to determine what files and/or directories to exclude
 function ignoreFunc(file, stats) {
-  // Ignore directories names log or logs
+  // Ignore directories named log or logs
   if (stats.isDirectory()) {
     return path.basename(file) == "log" || path.basename(file) == "logs"
   }
@@ -114,7 +116,7 @@ function ignoreFunc(file, stats) {
 recursive(program.source, [ignoreFunc], function(err, files) {
   if (err) {
     log.error(`Could not read list of files. ${err}`)
-    process.exit(1)
+    // process.exit(1)
   }
 
   // console.log(files);
@@ -128,7 +130,7 @@ recursive(program.source, [ignoreFunc], function(err, files) {
     if (program.dryRun) {
       log.info(`Dry Run: Would move ${filePath} to ${newPath}`)
     } else {
-      await log.info(`Moved ${filePath} to ${newPath}`)
+      log.info(`Moved ${filePath} to ${newPath}`)
       await moveFile(filePath, newPath)
     }
   })
@@ -141,42 +143,42 @@ function getFileDate(file) {
       try {
         new ExifImage({ image: file }, function(error, exifData) {
           if (error) {
-            log.error(
-              `${os.EOL}********${os.EOL}ExifImage Error:  ${file} ${
-                error.message
-              } ${os.EOL}******** `
-            )
-            process.exit(1)
+            // log.error(`ExifImage Error:  ${file} ${error.message}`)
+            // process.exit(1)
+          } else {
+            if (exifData.exif.DateTimeOriginal) {
+              fileDate = exifData.exif.CreateDate.split(/[:| ]/, 3)
+            } else if (exifData.exif.CreateDate) {
+              fileDate = exifData.exif.CreateDate.split(/[:| ]/, 3)
+            }
+            if (fileDate[1]) {
+              let logFileDate = fileDate[1]
+              fileDate[1] = fileDate[1] - 1 // decrementing so log displays the correct month. monthsLong and monthsShort are ZERO based arrays
+              fileDate[1] = fileDate[1].toString()
+            }
           }
-          if (exifData.exif.DateTimeOriginal) {
-            fileDate = exifData.exif.CreateDate.split(/[:| ]/, 3)
-          } else if (exifData.exif.CreateDate) {
-            fileDate = exifData.exif.CreateDate.split(/[:| ]/, 3)
-          }
-          if (fileDate[1]) {
-            let logFileDate = fileDate[1]
-            fileDate[1] = fileDate[1] - 1 // decrementing so log displays the correct month. monthsLong and monthsShort are ZERO based arrays
-            fileDate[1] = fileDate[1].toString()
-          }
-          // if we don't have a file date bc it is not a jpg or the jpg is missing exif data
-          if (0 === fileDate.length) {
-            let stats = fs.statSync(file)
-            let fileMtime = new Date(stats.mtime)
-            fileDate[0] = fileMtime.getFullYear().toString()
-            let logFileDate = fileMtime.getMonth() + 1 // incrementing so log displays the correct month. monthsLong and monthsShort are ZERO based arrays
-            fileDate[1] = fileMtime.getMonth().toString()
-            fileDate[2] = fileMtime.getDate().toString()
-          }
-          resolve(fileDate)
         })
       } catch (error) {
-        log.error(
-          `${os.EOL}********${os.EOL}ExifImage Error: ${error.message} ${
-            os.EOL
-          }******** `
-        )
-        process.exit(1)
+        // log.error(`ExifImage Error: ${error.message}`)
+        // process.exit(1)
       }
+      // if we don't have a file date bc it is not a jpg or the jpg is missing exif data
+      if (0 === fileDate.length) {
+        // log.info(`YO: statSync this file ${file}`)
+        let stats = fs.statSync(file)
+        let fileMtime = new Date(stats.mtime)
+        fileDate[0] = fileMtime.getFullYear().toString()
+        let logFileDate = fileMtime.getMonth() + 1 // incrementing so log displays the correct month. monthsLong and monthsShort are ZERO based arrays
+        fileDate[1] = fileMtime.getMonth().toString()
+        fileDate[2] = fileMtime.getDate().toString()
+      }
+      // if still no fileDate log error that we cannot move this file
+      if (0 === fileDate.length) {
+        log.error(
+          `Cannot move {$file} to datestamp directory because we cannot derive date from exif info or file create date.`
+        )
+      }
+      resolve(fileDate)
     }
   })
 }
