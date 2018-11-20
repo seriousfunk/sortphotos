@@ -1,3 +1,4 @@
+
 "use strict"
 
 const fs = require("fs")
@@ -11,6 +12,7 @@ const snl = require("simple-node-logger")
 const recursive = require("recursive-readdir")
 const chalk = require("chalk")
 const ExifImage = require("exif").ExifImage
+
 
 program
   .version("1.0.0")
@@ -43,27 +45,32 @@ program
     "-x, --dry-run",
     "Write to screen and log what would happen but do not do anything."
   )
+
   .option("-o, --older-than [30]", "Only move files older than 30 days.", "14")
   .on("--help", function() {
     console.log()
     console.log("  " + chalk.bgYellow(" Examples: "))
     console.log()
+
     console.log(
       `   $ node ${path.basename(
         process.argv[1],
         ".js"
       )} -s "c:\\camera uploads" -d "c:\\My Photos" -f YYYY\/YYYY_MM`
+
     )
     console.log()
   })
 
 program.parse(process.argv)
 
+
 if (!program.source || !program.destination) {
   console.log(
     chalk`${
       os.EOL
     }{bgRed  Error: } {red source and destination folder required.}`
+
   )
   program.help()
 }
@@ -117,12 +124,14 @@ recursive(program.source, [ignoreFunc], function(err, files) {
   if (err) {
     log.error(`Could not read list of files. ${err}`)
     // process.exit(1)
+
   }
 
   // console.log(files);
 
   files.forEach(async function(file, index) {
     // let filePath = path.join(program.source, file)
+
     let filePath = path.normalize(file)
     let fileDate = await getFileDate(filePath)
     let toDir = await setDirectory(fileDate)
@@ -139,10 +148,12 @@ recursive(program.source, [ignoreFunc], function(err, files) {
 function getFileDate(file) {
   return new Promise(resolve => {
     let fileDate = []
+
     if (".jpg" == path.extname(file)) {
       try {
         new ExifImage({ image: file }, function(error, exifData) {
           if (error) {
+
             // log.error(`ExifImage Error:  ${file} ${error.message}`)
             // process.exit(1)
           } else {
@@ -250,4 +261,5 @@ function setDirectory(fileDate) {
     let directory = path.join(program.destination, dateFolder)
     resolve(path.normalize(directory))
   })
+
 }
