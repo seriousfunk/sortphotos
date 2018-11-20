@@ -12,6 +12,10 @@ const recursive = require("recursive-readdir")
 const chalk = require("chalk")
 const ExifImage = require("exif").ExifImage
 
+let log = null
+let filesMoved = 0
+let fileErrors = 0
+
 program
   .version("1.0.0")
   .description(
@@ -19,16 +23,16 @@ program
   )
   .option(
     "-s, --source <source>",
-    "Source Directory (use quotes if directory contains spaces)"
+    "Source Directory (Use quotes if directory contains spaces. Do not end in a backslash as it will escape your quote.)"
   )
   .option(
     "-d, --destination <destination>",
-    "Destination Directory (use quotes if directory contains spaces)"
+    "Destination Directory (Use quotes if directory contains spaces. Do not end in a backslash as it will escape your quote.)"
   )
   // .option("-r, --recursive", "recurse subdirectories")
   .option(
     "-f --folder <format>",
-    "Folder Format",
+    "Folder Format (YYYY_MM|YYYY_MM_DD|YYYY\\MM||YYYY\\MM-MON|YYYY\\MM-Month)",
     /^(YYYY_MM|YYYY_MM_DD|YYYY\/MM||YYYY\/MM-MON|YYYY\/MM-Month)$/i,
     "YYYY/MM-Month"
   )
@@ -43,7 +47,7 @@ program
     "-x, --dry-run",
     "Write to screen and log what would happen but do not do anything."
   )
-  .option("-o, --older-than [30]", "Only move files older than 30 days.", "14")
+  .option("-o, --older-than [30]", "Only move files older than 30 days.", "30")
   .on("--help", function() {
     console.log()
     console.log("  " + chalk.bgYellow(" Examples: "))
@@ -67,8 +71,6 @@ if (!program.source || !program.destination) {
   )
   program.help()
 }
-
-let log = null
 
 if (program.dryRun || program.log) {
   program.log = program.log.replace("<source_directory>", program.source)
@@ -131,9 +133,10 @@ recursive(program.source, [ignoreFunc], function(err, files) {
       log.info(`Dry Run: Would move ${filePath} to ${newPath}`)
     } else {
       log.info(`Moved ${filePath} to ${newPath}`)
-      await moveFile(filePath, newPath)
+      await moveFile(filePath, newPath).then(filesMoved++)
     }
   })
+  log.info(`${os.EOL}Files moved: ${filesMoved} ${os.EOL}Errors: ${fileErrors}`)
 })
 
 function getFileDate(file) {
@@ -174,6 +177,7 @@ function getFileDate(file) {
       }
       // if still no fileDate log error that we cannot move this file
       if (0 === fileDate.length) {
+        fileErrors++
         log.error(
           `Cannot move {$file} to datestamp directory because we cannot derive date from exif info or file create date.`
         )
