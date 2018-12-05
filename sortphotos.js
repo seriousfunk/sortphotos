@@ -156,8 +156,8 @@ function getFileDate(file) {
       try {
         new ExifImage({ image: file }, function(error, exifData) {
           if (error) {
-            log.error(`ExifImage Error:  ${file} ${error.message}`)
-            reject(`ExifImage Error:  ${file} ${error.message}`)
+            log.warn(`${file} ${error.message} Will use file create date.`)
+            reject(`${file} ${error.message} Will use file create date.`)
           } else {
             if (exifData.exif.DateTimeOriginal) {
               fileDate = exifData.exif.CreateDate.split(/[:| ]/, 3)
@@ -172,8 +172,12 @@ function getFileDate(file) {
           }
         })
       } catch (error) {
-        log.error(`ExifImage Error: ${error.message}`)
-        reject(`ExifImage Error: ${error.message}`)
+        log.warn(
+          `ExifImage error caught. ${error.message}. Will use file create date.`
+        )
+        reject(
+          `ExifImage error caught. ${error.message}. Will use file create date.`
+        )
       }
     }
     // if we don't have a file date because it is not a jpg or the jpg is missing exif data
