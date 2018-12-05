@@ -52,6 +52,7 @@ program
     console.log()
     console.log("  " + chalk.bgYellow(" Examples: "))
     console.log()
+
     console.log(
       `   $ node ${path.basename(
         process.argv[1],
@@ -127,6 +128,7 @@ recursive(program.source, [ignoreFunc], function(err, files) {
 
   files.forEach(async function(file, index, array) {
     // let filePath = path.join(program.source, file)
+
     let filePath = path.normalize(file)
     let fileDate = await getFileDate(filePath)
     if (fileDate) {
@@ -152,6 +154,7 @@ recursive(program.source, [ignoreFunc], function(err, files) {
 function getFileDate(file) {
   return new Promise((resolve, reject) => {
     let fileDate = []
+
     if (".jpg" == path.extname(file)) {
       try {
         new ExifImage({ image: file }, function(error, exifData) {
