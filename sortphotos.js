@@ -120,34 +120,44 @@ recursive(program.source, [ignoreFunc], function(err, files) {
     log.error(`Could not read list of files. ${err}`)
     // process.exit(1)
   }
+  let filesProcessed = 0
 
-  // console.log(files);
+  // log.warn("files.length = " + files.length)
+  // log.warn("files.toString() = " + files.toString())
 
-  files.forEach(async function(file, index) {
+  files.forEach(async function(file, index, array) {
     // let filePath = path.join(program.source, file)
     let filePath = path.normalize(file)
     let fileDate = await getFileDate(filePath)
-    let toDir = await setDirectory(fileDate)
-    let newPath = path.join(toDir, path.basename(file))
-    if (program.dryRun) {
-      log.info(`Dry Run: Would move ${filePath} to ${newPath}`)
-    } else {
-      log.info(`Moved ${filePath} to ${newPath}`)
-      await moveFile(filePath, newPath).then(filesMoved++)
+    if (fileDate) {
+      let toDir = await setDirectory(fileDate)
+      let newPath = path.join(toDir, path.basename(file))
+      if (program.dryRun) {
+        log.info(`Dry Run: Would move ${filePath} to ${newPath}`)
+        filesMoved++
+      } else {
+        log.info(`Moved ${filePath} to ${newPath}`)
+        await moveFile(filePath, newPath).then(filesMoved++)
+      }
+    }
+    filesProcessed++
+    if (filesProcessed === array.length) {
+      log.info(
+        `${os.EOL}Files moved: ${filesMoved} ${os.EOL}Errors: ${fileErrors}`
+      )
     }
   })
-  log.info(`${os.EOL}Files moved: ${filesMoved} ${os.EOL}Errors: ${fileErrors}`)
 })
 
 function getFileDate(file) {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     let fileDate = []
     if (".jpg" == path.extname(file)) {
       try {
         new ExifImage({ image: file }, function(error, exifData) {
           if (error) {
-            // log.error(`ExifImage Error:  ${file} ${error.message}`)
-            // process.exit(1)
+            log.error(`ExifImage Error:  ${file} ${error.message}`)
+            reject(`ExifImage Error:  ${file} ${error.message}`)
           } else {
             if (exifData.exif.DateTimeOriginal) {
               fileDate = exifData.exif.CreateDate.split(/[:| ]/, 3)
@@ -162,26 +172,30 @@ function getFileDate(file) {
           }
         })
       } catch (error) {
-        // log.error(`ExifImage Error: ${error.message}`)
-        // process.exit(1)
+        log.error(`ExifImage Error: ${error.message}`)
+        reject(`ExifImage Error: ${error.message}`)
       }
-      // if we don't have a file date bc it is not a jpg or the jpg is missing exif data
-      if (0 === fileDate.length) {
-        // log.info(`YO: statSync this file ${file}`)
-        let stats = fs.statSync(file)
-        let fileMtime = new Date(stats.mtime)
-        fileDate[0] = fileMtime.getFullYear().toString()
-        let logFileDate = fileMtime.getMonth() + 1 // incrementing so log displays the correct month. monthsLong and monthsShort are ZERO based arrays
-        fileDate[1] = fileMtime.getMonth().toString()
-        fileDate[2] = fileMtime.getDate().toString()
-      }
-      // if still no fileDate log error that we cannot move this file
-      if (0 === fileDate.length) {
-        fileErrors++
-        log.error(
-          `Cannot move {$file} to datestamp directory because we cannot derive date from exif info or file create date.`
-        )
-      }
+    }
+    // if we don't have a file date because it is not a jpg or the jpg is missing exif data
+    if (0 === fileDate.length) {
+      // log.info(`YO: statSync this file ${file}`)
+      let stats = fs.statSync(file)
+      let fileMtime = new Date(stats.mtime)
+      fileDate[0] = fileMtime.getFullYear().toString()
+      let logFileDate = fileMtime.getMonth() + 1 // incrementing so log displays the correct month. monthsLong and monthsShort are ZERO based arrays
+      fileDate[1] = fileMtime.getMonth().toString()
+      fileDate[2] = fileMtime.getDate().toString()
+    }
+    // if still no fileDate log error that we cannot move this file
+    if (0 === fileDate.length) {
+      fileErrors++
+      log.error(
+        `Cannot move {$file} to datestamp directory because we cannot derive date from exif info or file create date.`
+      )
+      reject(
+        `Cannot move {$file} to datestamp directory because we cannot derive date from exif info or file create date.`
+      )
+    } else {
       resolve(fileDate)
     }
   })
