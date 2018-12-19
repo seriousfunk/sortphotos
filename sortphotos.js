@@ -163,7 +163,7 @@ function getFileDate(file) {
             reject(`${file} ${error.message} Will use file create date.`)
           } else {
             if (exifData.exif.DateTimeOriginal) {
-              fileDate = exifData.exif.CreateDate.split(/[:| ]/, 3)
+              fileDate = exifData.exif.DateTimeOriginal.split(/[:| ]/, 3)
             } else if (exifData.exif.CreateDate) {
               fileDate = exifData.exif.CreateDate.split(/[:| ]/, 3)
             }
