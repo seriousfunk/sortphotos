@@ -13,7 +13,7 @@ NodeJS script for organizing photos into a Date folder structure (e.g. YYYY/MM-M
 
 ## Feature Suggestions
 
-- Rename photos according to EXIF attributes
+- Rename photos according to EXIF attributes.
 - Option to sort photos into Albums (i.e. named folders) based on frequency of photos shot in close time proximity to one another
 
 ## Machine Learning Wish List
