@@ -1,0 +1,11 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "prettier.semi": false,
+    "editor.formatOnSave": true
+  }
+}
