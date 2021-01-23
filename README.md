@@ -11,6 +11,12 @@ NodeJS script for organizing photos into a Date folder structure (e.g. YYYY/MM-M
 - -l, --log [log_file] : Log file, including path, Default: ./logs/sortphotos-YYYY-MM-DD-HHmmss.log
 - -x, --dry-run : Write to screen and log what would happen but do not do anything
 
+## Versions
+
+- 2.0.0 January 23, 2021 | Updated all npm modules to latest and refactored where needed.
+- 1.0.0 December 18, 2018 | first build
+
+
 ## Feature Suggestions
 
 - Rename photos according to EXIF attributes.

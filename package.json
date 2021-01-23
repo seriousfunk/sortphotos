@@ -14,16 +14,15 @@
   "author": "Matt Muro",
   "license": "ISC",
   "dependencies": {
-    "async-mkdirp": "^1.2.4",
-    "chalk": "^2.4.1",
-    "commander": "^2.15.1",
+    "async-mkdirp": "^1.2.7",
+    "chalk": "^4.1.0",
+    "commander": "^7.0.0",
     "exif": "^0.6.0",
-    "mkdirp": "^0.5.1",
-    "moment": "^2.22.2",
-    "move-file": "^1.0.0",
+    "mkdirp": "^1.0.4",
+    "moment": "^2.29.1",
+    "move-file": "^2.0.0",
     "mv": "^2.1.1",
     "recursive-readdir": "^2.2.2",
-    "simple-node-logger": "^0.93.37",
-    "strip-ansi": "^4.0.0"
+    "simple-node-logger": "^18.12.24"
   }
 }

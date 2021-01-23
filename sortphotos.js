@@ -6,21 +6,25 @@ const os = require("os")
 const mkdirp = require("mkdirp")
 const moveFile = require("move-file")
 const moment = require("moment")
-const program = require("commander")
+const commander = require("commander")
 const snl = require("simple-node-logger")
 const recursive = require("recursive-readdir")
 const chalk = require("chalk")
 const ExifImage = require("exif").ExifImage
+const { exit } = require('process')
 
 let log = null
 let filesMoved = 0
 let fileErrors = 0
 
+const program = new commander.Command();
+
 program
-  .version("1.0.0")
+  .version("2.0.0")
   .description(
     "Move photos from a directory into an organized directory structure by the photos exif date created (if available) or file create date."
   )
+  .usage('-s "c:\\camera uploads" -d "c:\\My Photos" -f YYYY\/YYYY_MM')
   .option(
     "-s, --source <source>",
     "Source Directory (Use quotes if directory contains spaces. Do not end in a backslash as it will escape your quote.)"
@@ -29,79 +33,75 @@ program
     "-d, --destination <destination>",
     "Destination Directory (Use quotes if directory contains spaces. Do not end in a backslash as it will escape your quote.)"
   )
-  // .option("-r, --recursive", "recurse subdirectories")
-  .option(
-    "-f --folder <format>",
-    "Folder Format (YYYY_MM|YYYY_MM_DD|YYYY\\MM||YYYY\\MM-MON|YYYY\\MM-Month)",
-    /^(YYYY_MM|YYYY_MM_DD|YYYY\/MM||YYYY\/MM-MON|YYYY\/MM-Month)$/i,
-    "YYYY/MM-Month"
-  )
+  .addOption(new commander.Option('-f, --folder <format>',
+    'Folder Format')
+    .choices(['YYYY_MM', 'YYYY_MM_DD', 'YYYY/MM', 'YYYY/MM-MON', 'YYYY/MM-Month'])
+    .default('YYYY/MM-Month'))
   .option(
     "-l --log [log_file]",
     "Log file, including path",
     "<source_directory>/logs/sortphotos-" +
-      moment().format("YYYY-MM-DD-HHmmss") +
-      ".log"
+    moment().format("YYYY-MM-DD-HHmmss") +
+    ".log"
   )
   .option(
     "-x, --dry-run",
     "Write to screen and log what would happen but do not do anything."
   )
   .option("-o, --older-than [30]", "Only move files older than 30 days.", "30")
-  .on("--help", function() {
-    console.log()
-    console.log("  " + chalk.bgYellow(" Examples: "))
-    console.log()
-
-    console.log(
-      `   $ node ${path.basename(
-        process.argv[1],
-        ".js"
-      )} -s "c:\\camera uploads" -d "c:\\My Photos" -f YYYY\/YYYY_MM`
-    )
-    console.log()
-  })
 
 program.parse(process.argv)
 
-if (!program.source || !program.destination) {
+const options = program.opts()
+// console.log('Options:', options)
+// exit(1)
+
+if (!options.source || !options.destination) {
   console.log(
-    chalk`${
-      os.EOL
-    }{bgRed  Error: } {red source and destination folder required.}`
+    chalk`${os.EOL
+      }{bgRed  Error: } {red source and destination folder required.}`
   )
   program.help()
 }
 
-if (program.dryRun || program.log) {
-  program.log = program.log.replace("<source_directory>", program.source)
-  let logPath = path.normalize(path.dirname(program.log))
-  mkdirp.sync(logPath, function(err) {
-    if (err)
-      console.log(
-        `${os.EOL}********${os.EOL}mkdirp Error: ${err}${os.EOL}******** `
-      )
-  })
-  log = snl.createSimpleLogger(path.normalize(program.log))
-  if (program.dryRun) {
+if (options.dryRun || options.log) {
+  options.log = options.log.replace("<source_directory>", options.source)
+  let logPath = path.normalize(path.dirname(options.log))
+
+  mkdirp(logPath)
+    .then(made => {
+      if (made == undefined) {
+        log.info('Log directory already existed. I did not need to make it.')
+      }
+      else {
+        log.info(`Created log directory ${logPath}`)
+      }
+    })
+    .catch(error => {
+      console.error(`${os.EOL}********${os.EOL}mkdirp Error: ${error}${os.EOL}********`)
+      exit(1)
+    })
+
+  log = snl.createSimpleLogger(path.normalize(options.log))
+  if (options.dryRun) {
     log.info(
       `Dry Run: Not sorting and moving photos. Simply displaying and logging what we would do if this was not a dry-run`
     )
   }
   log.info(
-    `Logging info to console and log file ${path.normalize(program.log)}`
+    `Logging info to console and log file ${path.normalize(options.log)}`
   )
-  log.info(`Only moving files older than ${program.olderThan} days old`)
+  log.info(`Only moving files older than ${options.olderThan} days old`)
   log.info(
     `Destination folder structure: ${path.join(
-      program.destination,
-      program.folder
+      options.destination,
+      options.folder
     )}`
   )
 }
 
 // function to determine what files and/or directories to exclude
-function ignoreFunc(file, stats) {
+function ignoreFunc (file, stats) {
   // Ignore directories named log or logs
   if (stats.isDirectory()) {
     return path.basename(file) == "log" || path.basename(file) == "logs"
@@ -111,30 +111,30 @@ function ignoreFunc(file, stats) {
     return true
   }
   // Ignore files less than N days old
-  if (stats.mtime > moment().subtract(program.olderThan, "days")) {
+  if (stats.mtime > moment().subtract(options.olderThan, "days")) {
     return true
   }
 }
 
-recursive(program.source, [ignoreFunc], function(err, files) {
+recursive(options.source, [ignoreFunc], function (err, files) {
   if (err) {
     log.error(`Could not read list of files. ${err}`)
-    // process.exit(1)
+    // exit(1)
   }
   let filesProcessed = 0
 
   // log.warn("files.length = " + files.length)
   // log.warn("files.toString() = " + files.toString())
 
-  files.forEach(async function(file, index, array) {
-    // let filePath = path.join(program.source, file)
+  files.forEach(async function (file, index, array) {
+    // let filePath = path.join(options.source, file)
 
     let filePath = path.normalize(file)
     let fileDate = await getFileDate(filePath)
     if (fileDate) {
       let toDir = await setDirectory(fileDate)
       let newPath = path.join(toDir, path.basename(file))
-      if (program.dryRun) {
+      if (options.dryRun) {
         log.info(`Dry Run: Would move ${filePath} to ${newPath}`)
         filesMoved++
       } else {
@@ -151,13 +151,13 @@ recursive(program.source, [ignoreFunc], function(err, files) {
   })
 })
 
-function getFileDate(file) {
+function getFileDate (file) {
   return new Promise((resolve, reject) => {
     let fileDate = []
 
     if (".jpg" == path.extname(file)) {
       try {
-        new ExifImage({ image: file }, function(error, exifData) {
+        new ExifImage({ image: file }, function (error, exifData) {
           if (error) {
             log.warn(`${file} ${error.message} Will use file create date.`)
             reject(`${file} ${error.message} Will use file create date.`)
@@ -208,7 +208,7 @@ function getFileDate(file) {
   })
 }
 
-function setDirectory(fileDate) {
+function setDirectory (fileDate) {
   return new Promise(resolve => {
     let dateFolder = null
     const monthsLong = [
@@ -243,7 +243,7 @@ function setDirectory(fileDate) {
     let monthNumber = (parseInt(fileDate[1]) + 1).toString() // to account for ZERO based monthsLong and monthsShort arrays
 
     // Compose directory based on folder set or default
-    switch (program.folder) {
+    switch (options.folder) {
       case "YYYY_MM":
         dateFolder = `${fileDate[0]}_${monthNumber.padStart(2, "0")}`
         break
@@ -257,22 +257,19 @@ function setDirectory(fileDate) {
         dateFolder = path.join(fileDate[0], monthNumber.padStart(2, "0"))
         break
       case "YYYY/MM-MON":
-        dateFolder = `${path.join(fileDate[0], monthNumber.padStart(2, "0"))}-${
-          monthsShort[fileDate[1]]
-        }`
+        dateFolder = `${path.join(fileDate[0], monthNumber.padStart(2, "0"))}-${monthsShort[fileDate[1]]
+          }`
         break
       case "YYYY/MM-Month":
-        dateFolder = `${path.join(fileDate[0], monthNumber.padStart(2, "0"))}-${
-          monthsLong[fileDate[1]]
-        }`
+        dateFolder = `${path.join(fileDate[0], monthNumber.padStart(2, "0"))}-${monthsLong[fileDate[1]]
+          }`
       default:
-        dateFolder = `${path.join(fileDate[0], monthNumber.padStart(2, "0"))}-${
-          monthsLong[fileDate[1]]
-        }`
+        dateFolder = `${path.join(fileDate[0], monthNumber.padStart(2, "0"))}-${monthsLong[fileDate[1]]
+          }`
     }
 
     // Combine destination folder with date structure they chose
-    let directory = path.join(program.destination, dateFolder)
+    let directory = path.join(options.destination, dateFolder)
     resolve(path.normalize(directory))
   })
 }
