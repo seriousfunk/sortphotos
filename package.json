@@ -19,7 +19,7 @@
     "commander": "^7.0.0",
     "exif": "^0.6.0",
     "mkdirp": "^1.0.4",
-    "moment": "^2.29.1",
+    "moment": "^2.29.2",
     "move-file": "^2.0.0",
     "mv": "^2.1.1",
     "recursive-readdir": "^2.2.2",
