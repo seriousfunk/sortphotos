@@ -1,5 +1,7 @@
 # Sortphotos
 
+RETIRED: NO LONGER BEING UPDATED.
+
 NodeJS script for organizing photos into a Date folder structure (e.g. YYYY/MM-Month, YYYY_MM)
 
 ## Options
